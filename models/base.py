@@ -2,7 +2,7 @@ import os
 from glob import glob
 import tensorflow as tf
 
-class Model(object):
+class BaseModel(object):
   """Abstract object representing an Reader model."""
   def __init__(self):
     self.checkpoint_dir = "checkpoints"
