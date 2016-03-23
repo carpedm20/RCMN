@@ -14,6 +14,7 @@ class GRU(object):
 
 class Default(object):
   dataset = "ptb"
+  is_single_output = False
 
 class RcmnSmall(object):
   keep_prob     = 1.0
@@ -59,10 +60,12 @@ class RcmnLarge(object):
 
 class RcmnTraining1(object):
   max_epoch     = 14
-  learning_rate = 0.001
   max_grad_norm = 10
   decay_rate    = 0.96
   decay_step    = 10000
+  learning_rate = 0.001
+  l2            = 0.0004
+  optim         = "adam"
 
 class RcmnSmallConfig(RcmnSmall, Default, Word, GRU, RcmnTraining1):
   pass
