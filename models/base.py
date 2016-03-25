@@ -11,7 +11,8 @@ class BaseModel(object):
     model_dir = self.dataset
     for attr in self._attrs:
       if hasattr(self, attr):
-        model_dir += "/%s:%s" % (attr, str(getattr(self, attr)))
+        v = getattr(self, attr)
+        model_dir += "/%s:%s" % (attr, ",".join([str(i) for i in v]) if type(v) == list else v)
     return model_dir
 
   def save_model(self, step=None):

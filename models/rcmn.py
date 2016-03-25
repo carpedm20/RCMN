@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 
 from tensorflow.models.rnn import rnn_cell
-from tensorflow.models.rnn.ptb import reader as ptb_reader
+import ptb_reader
 
 from .ops import *
 from .base import BaseModel
@@ -130,8 +130,8 @@ class RCMN(BaseModel):
 
     with tf.variable_scope("output"):
       if self.is_single_output:
-        self.y = tf.placeholder(tf.int32, [self.batch_size], name="y")
-        self.y_one_hot = tf.one_hot(self.y, self.vocab_size, 1, 0)
+        self.y = tf.placeholder(tf.int64, [self.batch_size], name="y")
+        self.y_one_hot = tf.one_hot(self.y, self.vocab_size, 1.0, 0.0)
 
         # self.max_seq_l x [self.batch_size, self.hidden_dim]
         outputs = tf.unpack(cell_output)
@@ -161,6 +161,7 @@ class RCMN(BaseModel):
         else:
           self.y_ = self.Y_[-1]
 
+        self.pred = tf.argmax(self.y_, 1, name="predictions")
         seq_loss = tf.nn.softmax_cross_entropy_with_logits(self.y_, self.y_one_hot)
       else:
         if self.max_pool_in_output:
@@ -207,7 +208,8 @@ class RCMN(BaseModel):
       self.reader = ptb_reader
 
       raw_data = self.reader.ptb_raw_data(data_path)
-      self.train_data, self.valid_data, self.test_data, _ = raw_data
+      self.train_data, self.valid_data, self.test_data, self.word2idx = raw_data
+      self.idx2word = {i:w for w, i in self.word2idx.items()}
 
       self.iterator = self.reader.ptb_iterator
     else:
@@ -215,16 +217,19 @@ class RCMN(BaseModel):
 
   def train(self):
     merged_sum = tf.merge_all_summaries()
-    writer = tf.train.SummaryWriter("./logs/%s" % self.get_model_dir(), self.sess.graph_def)
+    writer = tf.train.SummaryWriter("./logs/%s" % self.get_model_dir(), self.sess.graph)
 
     tf.initialize_all_variables().run()
     self.load_model()
 
-    start_epoch = self.g_step.eval()
+    start_epoch = self.g_epoch.eval()
     for epoch in xrange(start_epoch, self.max_epoch-start_epoch):
       train_perplexity = self.run_epoch(self.train_data, merged_sum, writer)
 
-      print(" [*] Epoch: %d Train Perplexity: %.3f" % (i + 1, train_perplexity))
+      print(" [*] Epoch: %d Train Perplexity: %.3f" % (epoch + 1, train_perplexity))
+
+      self.g_epoch.assign(epoch + 1)
+      self.save_model(step=self.g_step.eval())
 
   def run_epoch(self, data, summary, writer):
     epoch_size = ((len(data) // self.batch_size) - 1) // self.max_seq_l
@@ -235,25 +240,31 @@ class RCMN(BaseModel):
 
     iterator = self.iterator(data, self.batch_size, self.max_seq_l)
     for step, (x, y) in enumerate(iterator):
-      data = {self.x: x, self.y: y, self.initial_state: state}
+      if self.is_single_output:
+        data = {self.x: x, self.y: y[:,-1], self.initial_state: state}
+      else:
+        data = {self.x: x, self.y: y, self.initial_state: state}
 
-      idx = step % (epoch_size // 10)
-      if idx == 10:
+      if step % 100 == 1:
+        cost, state = self.sess.run([self.cost, self.final_state], data)
         print(" [*] %.3f perplexity: %.3f speed: %.0f wps" %
               (step * 1.0 / epoch_size, np.exp(costs / iters),
               iters * self.batch_size / (time.time() - start_time)))
 
+      if step % 5 == 1:
         cost, state, summary_str, _ = self.sess.run(
-            [self.cost, self.final_state, self.summary, self.optim], data)
+            [self.cost, self.final_state, summary, self.optim], data)
 
         writer.add_summary(summary_str, self.g_step.eval())
-      elif idx == 20:
-        self.save_model(step=self.g_step.eval())
       else:
         cost, state, _ = self.sess.run([self.cost, self.final_state, self.optim], data)
 
       costs += cost
       iters += self.num_steps
+
+    pred_words = [self.idx2word[i] for i in self.sess.run([self.pred], data)]
+    print("\n\n".join([" ".join([self.idx2word[i] for i in l]) \
+                        + ' "%s"' % w for l, w in zip(x, pred_words)]))
 
     return np.exp(costs / iters)
 
