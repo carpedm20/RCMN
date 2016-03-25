@@ -197,9 +197,10 @@ class RCMN(BaseModel):
 
       self.optim = optimizer.apply_gradients(zip(grads, tvars), global_step=self.g_step)
 
-      _ = tf.scalar_summary("l2_loss", self.l2_loss)
+      _ = tf.scalar_summary("perplexity", tf.exp(self.cost))
+      _ = tf.scalar_summary("loss + l2", self.cost)
+      _ = tf.scalar_summary("l2", self.l2_loss)
       _ = tf.scalar_summary("loss", loss)
-      _ = tf.scalar_summary("total loss", self.cost)
 
   def build_reader(self):
     data_path = "./data/%s" % self.dataset
