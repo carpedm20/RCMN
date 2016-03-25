@@ -63,7 +63,8 @@ class RCMN(BaseModel):
       self.x = tf.placeholder(tf.int32, [self.batch_size, self.max_seq_l])
 
       with tf.device("/cpu:0"):
-        embedding = tf.get_variable("embedding", [self.vocab_size, self.embed_dim])
+        embedding = tf.get_variable("embedding", [self.vocab_size, self.embed_dim],
+                                    initializer=tf.contrib.layers.xavier_initializer())
         first_input = tf.nn.embedding_lookup(embedding, self.x)
 
       if self.is_training and self.keep_prob < 1:
@@ -139,7 +140,7 @@ class RCMN(BaseModel):
         self.Y_ = []
         for step, output in enumerate(outputs):
           # [self.batch_size, self.vocab_size]
-          logits = rnn_cell.linear(output, self.vocab_size, True, scope="y_S%d" % step)
+          logits = linear(output, self.vocab_size, True, scope="y_S%d" % step)
           self.Y_.append(tf.reshape(logits, [self.batch_size, -1]))
       else:
         self.y = tf.placeholder(tf.int32, [self.batch_size, self.max_seq_l], name="y")
@@ -150,7 +151,7 @@ class RCMN(BaseModel):
         self.Y_ = []
         for step, output in enumerate(outputs):
           # [self.batch_size x self.max_seq_l, self.vocab_size]
-          logits = rnn_cell.linear(output, self.max_seq_l * self.vocab_size, True, scope="y_S%d" % step)
+          logits = linear(output, self.max_seq_l * self.vocab_size, True, scope="y_S%d" % step)
           self.Y_.append(tf.reshape(logits, [self.batch_size * self.max_seq_l, -1]))
 
     with tf.variable_scope("training"):
@@ -246,24 +247,26 @@ class RCMN(BaseModel):
       else:
         data = {self.x: x, self.y: y, self.initial_state: state}
 
-      if step % 100 == 1:
+      if step % 100 == 99:
         cost, state = self.sess.run([self.cost, self.final_state], data)
         print(" [*] %.3f perplexity: %.3f speed: %.0f wps" %
               (step * 1.0 / epoch_size, np.exp(costs / iters),
               iters * self.batch_size / (time.time() - start_time)))
 
-      if step % 5 == 1:
+      if step % 5 == 4:
         cost, state, summary_str, _ = self.sess.run(
             [self.cost, self.final_state, summary, self.optim], data)
-
         writer.add_summary(summary_str, self.g_step.eval())
       else:
         cost, state, _ = self.sess.run([self.cost, self.final_state, self.optim], data)
 
       costs += cost
-      iters += self.num_steps
+      if self.is_single_output:
+        iters += 1
+      else:
+        iters += self.num_steps
 
-    pred_words = [self.idx2word[i] for i in self.sess.run([self.pred], data)]
+    pred_words = [self.idx2word[i] for i in self.sess.run(self.pred, data)]
     print("\n\n".join([" ".join([self.idx2word[i] for i in l]) \
                         + ' "%s"' % w for l, w in zip(x, pred_words)]))
 

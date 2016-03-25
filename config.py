@@ -29,7 +29,7 @@ class RcmnSmall(object):
   k_widths      = [2]
   num_ks        = [5]
 
-  batch_size    = 20
+  batch_size    = 22
 
 class RcmnMedium(object):
   keep_prob     = 0.5
