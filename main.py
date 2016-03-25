@@ -46,7 +46,8 @@ def main(_):
                  k_widths=config.k_widths, num_ks=config.num_ks,
                  max_grad_norm=config.max_grad_norm, decay_rate=config.decay_rate,
                  decay_step=config.decay_step, is_single_output=config.is_single_output,
-                 l2=config.l2, optim=config.optim, mode=FLAGS.mode)
+                 max_pool_in_output=config.max_pool_in_output,
+                 l2=config.l2, optim_type=config.optim_type, mode=FLAGS.mode)
 
     if FLAGS.mode == 0:
       model.train()

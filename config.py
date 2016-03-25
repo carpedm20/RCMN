@@ -15,11 +15,12 @@ class GRU(object):
 class Default(object):
   dataset = "ptb"
   is_single_output = False
+  max_pool_in_output = False
 
 class RcmnSmall(object):
   keep_prob     = 1.0
   embed_dim     = 200
-  hidden_dim    = 400
+  hidden_dim    = 3000
   vocab_size    = 10000
   word          = 1
   num_steps     = 3
@@ -28,12 +29,12 @@ class RcmnSmall(object):
   k_widths      = [2]
   num_ks        = [5]
 
-  batch_size    = 10
+  batch_size    = 20
 
 class RcmnMedium(object):
   keep_prob     = 0.5
   embed_dim     = 350
-  hidden_dim    = 450
+  hidden_dim    = 4500
   vocab_size    = 10000
   word          = 1
   num_steps     = 5
@@ -42,12 +43,12 @@ class RcmnMedium(object):
   k_widths      = [2]
   num_ks        = [10]
 
-  batch_size    = 20
+  batch_size    = 30
 
 class RcmnLarge(object):
   keep_prob     = 0.35
   embed_dim     = 500
-  hidden_dim    = 650
+  hidden_dim    = 6500
   vocab_size    = 10000
   word          = 1
   num_steps     = 10
@@ -65,7 +66,7 @@ class RcmnTraining1(object):
   decay_step    = 10000
   learning_rate = 0.001
   l2            = 0.0004
-  optim         = "adam"
+  optim_type    = "adam"
 
 class RcmnSmallConfig(RcmnSmall, Default, Word, GRU, RcmnTraining1):
   pass
