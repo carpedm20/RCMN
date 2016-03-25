@@ -44,6 +44,7 @@ class RCMN(BaseModel):
     self.mode = mode
 
     self.sess = sess
+    self.checkpoint_dir = "checkpoints"
 
     self.g_step = tf.Variable(0, name='step', trainable=False)
     self.g_epoch = tf.Variable(0, name='epoch', trainable=False)
@@ -130,9 +131,16 @@ class RCMN(BaseModel):
     with tf.variable_scope("output"):
       if self.is_single_output:
         self.y = tf.placeholder(tf.int32, [self.batch_size], name="y")
+        self.y_one_hot = tf.one_hot(self.y, self.vocab_size, 1, 0)
 
-        # [self.batch_size, self.vocab_size]
-        self.y_ = rnn_cell.linear(tf.unpack(cell_output), self.vocab_size, True, scope="y_")
+        # self.max_seq_l x [self.batch_size, self.hidden_dim]
+        outputs = tf.unpack(cell_output)
+
+        self.Y_ = []
+        for step, output in enumerate(outputs):
+          # [self.batch_size, self.vocab_size]
+          logits = rnn_cell.linear(output, self.vocab_size, True, scope="y_S%d" % step)
+          self.Y_.append(tf.reshape(logits, [self.batch_size, -1]))
       else:
         self.y = tf.placeholder(tf.int32, [self.batch_size, self.max_seq_l], name="y")
 
@@ -145,20 +153,26 @@ class RCMN(BaseModel):
           logits = rnn_cell.linear(output, self.max_seq_l * self.vocab_size, True, scope="y_S%d" % step)
           self.Y_.append(tf.reshape(logits, [self.batch_size * self.max_seq_l, -1]))
 
-        self.y_ = self.Y_[-1]
-
     with tf.variable_scope("training"):
-      if not self.is_single_output:
+      if self.is_single_output:
+        if self.max_pool_in_output:
+          self.y_ = tf.squeeze(tf.nn.max_pool(
+            tf.expand_dims(tf.pack(self.Y_), [0, 1]), [1, 1, 3, 1], [1, 1, 1, 1], 'VALID'))
+        else:
+          self.y_ = self.Y_[-1]
+
+        seq_loss = tf.nn.softmax_cross_entropy_with_logits(self.y_, self.y_one_hot)
+      else:
         if self.max_pool_in_output:
           self.y_ = tf.squeeze(tf.nn.max_pool(
             tf.expand_dims(tf.pack(self.Y_), 0), [1, 3, 1, 1], [1, 1, 1, 1], 'VALID'))
         else:
           self.y_ = self.Y_[-1]
 
-      seq_loss = tf.nn.seq2seq.sequence_loss_by_example(
-          [self.y_],
-          [tf.reshape(self.y, [-1])],
-          [tf.ones([self.batch_size * self.max_seq_l])])
+        seq_loss = tf.nn.seq2seq.sequence_loss_by_example(
+            [self.y_],
+            [tf.reshape(self.y, [-1])],
+            [tf.ones([self.batch_size * self.max_seq_l])])
 
       tvars = tf.trainable_variables()
       if self.l2 > 0:
@@ -201,7 +215,7 @@ class RCMN(BaseModel):
 
   def train(self):
     merged_sum = tf.merge_all_summaries()
-    writer = tf.train.SummaryWriter("./logs/%s" % self.get_model_dir(), self.sess.graph)
+    writer = tf.train.SummaryWriter("./logs/%s" % self.get_model_dir(), self.sess.graph_def)
 
     tf.initialize_all_variables().run()
     self.load_model()

@@ -14,18 +14,18 @@ class GRU(object):
 
 class Default(object):
   dataset = "ptb"
-  is_single_output = False
+  is_single_output = True
   max_pool_in_output = False
 
 class RcmnSmall(object):
   keep_prob     = 1.0
   embed_dim     = 200
-  hidden_dim    = 3000
+  hidden_dim    = 500
   vocab_size    = 10000
   word          = 1
   num_steps     = 3
-  max_seq_l     = 20
-  num_layers    = 2
+  max_seq_l     = 10
+  num_layers    = 1
   k_widths      = [2]
   num_ks        = [5]
 
@@ -39,7 +39,7 @@ class RcmnMedium(object):
   word          = 1
   num_steps     = 5
   max_seq_l     = 25
-  num_layers    = 3
+  num_layers    = 1
   k_widths      = [2]
   num_ks        = [10]
 
@@ -78,9 +78,9 @@ class RcmnLargeConfig(RcmnLarge, Default, Char, GRU, RcmnTraining1):
 def get_config(FLAGS):
   if FLAGS.model == "rcmn":
     config = FLAGS
-  elif FLAGS.model == "rcmn_small":
+  elif FLAGS.model == "small":
     config = RcmnSmallConfig
-  elif FLAGS.model == "rcmn_large":
+  elif FLAGS.model == "large":
     config = RcmnLargeConfig
   else:
     raise ValueError(" [!] Invalid model: %s", FLAGS.model)
