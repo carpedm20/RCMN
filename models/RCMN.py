@@ -15,7 +15,7 @@ class RCMN(BaseModel):
                vocab_size=10000, batch_size=20, max_seq_l=30, max_epoch=100,
                learning_rate=0.001, max_grad_norm=10, decay_rate=0.96,
                decay_step=10000, dataset="ptb", rnn_type="GRU", mode=0,
-               l2=0.0004, optim_type="adam", is_single_output=False,
+               l2=0.0004, epsilon=1.0, optim_type="adam", is_single_output=False,
                max_pool_in_output=False):
     """Initialize Recurrent Convolutional Memory Network."""
     self.keep_prob = keep_prob
@@ -37,6 +37,7 @@ class RCMN(BaseModel):
     self.max_epoch = max_epoch
     self.learning_rate = learning_rate
     self.max_grad_norm = max_grad_norm
+    self.epsilon = epsilon
     self.decay_rate = decay_rate
     self.decay_step = decay_step
     self.dataset = dataset
@@ -50,7 +51,7 @@ class RCMN(BaseModel):
     self._attrs = ["keep_prob", "hidden_dim", "embed_dim", "vocab_size",
                    "num_layers", "num_ks", "k_widths", "num_steps", "max_seq_l"
                    "rnn_type", "is_single_output", "max_pool_in_output",
-                   "l2", "optim_type", "batch_size", "max_epoch",
+                   "l2", "optim_type", "batch_size", "max_epoch", "epsilon",
                    "learning_rate", "max_grad_norm", "decay_rate", "decay_step", "dataset"]
 
     self.build_model()
@@ -77,8 +78,11 @@ class RCMN(BaseModel):
             k_dim = self.num_ks[0]
             conv = first_input
 
-          conv = conv2d(conv, k_dim, k_width, self.embed_dim, name=name)
+          conv = tf.nn.relu(conv2d(conv, k_dim, k_width, self.embed_dim, name=name),
+                            name=name.replace('conv', 'relu'))
           inputs.append(tf.reshape(conv, [self.batch_size, -1]))
+
+          tf.contrib.layers.summarize_activation(conv)
 
     with tf.variable_scope("lstm"):
       input_size = int(inputs[0].get_shape()[-1])
@@ -151,25 +155,25 @@ class RCMN(BaseModel):
         else:
           self.y_ = self.Y_[-1]
 
-      loss = tf.nn.seq2seq.sequence_loss_by_example(
+      seq_loss = tf.nn.seq2seq.sequence_loss_by_example(
           [self.y_],
           [tf.reshape(self.y, [-1])],
           [tf.ones([self.batch_size * self.max_seq_l])])
 
       tvars = tf.trainable_variables()
       if self.l2 > 0:
-        self.loss_l2 = self.l2 * sum([tf.nn.l2_loss(tvar) for tvar in tvars])
+        self.l2_loss = self.l2 * sum([tf.nn.l2_loss(tvar) for tvar in tvars])
       else:
-        self.loss_l2 = 0
+        self.l2_loss = 0
 
-      self.cost = (tf.reduce_sum(loss) / self.batch_size) + self.loss_l2
+      loss = (tf.reduce_sum(seq_loss) / self.batch_size)
+      self.cost = loss + self.l2_loss
       self.final_state = state
 
       if not self.is_training:
         return
 
-      grads, _ = tf.clip_by_global_norm(tf.gradients(self.cost, tvars),
-                                        self.max_grad_norm)
+      grads, _ = tf.clip_by_global_norm(tf.gradients(self.cost, tvars), self.max_grad_norm)
 
       if self.optim_type == "adam":
         optimizer = tf.train.AdamOptimizer(self.learning_rate)
@@ -177,6 +181,10 @@ class RCMN(BaseModel):
         optimizer = tf.train.AdagradOptimizer(self.learning_rate)
 
       self.optim = optimizer.apply_gradients(zip(grads, tvars), global_step=self.g_step)
+
+      _ = tf.scalar_summary("l2_loss", self.l2_loss)
+      _ = tf.scalar_summary("loss", loss)
+      _ = tf.scalar_summary("total loss", self.cost)
 
   def build_reader(self):
     data_path = "./data/%s" % self.dataset
@@ -193,15 +201,16 @@ class RCMN(BaseModel):
 
   def train(self):
     merged_sum = tf.merge_all_summaries()
-    writer = tf.train.SummaryWriter("./logs/%s" % self.get_model_dir(), self.sess.graph_def)
+    writer = tf.train.SummaryWriter("./logs/%s" % self.get_model_dir(), self.sess.graph)
 
     tf.initialize_all_variables().run()
-    self.load()
+    self.load_model()
 
     start_epoch = self.g_step.eval()
-
     for epoch in xrange(start_epoch, self.max_epoch-start_epoch):
-      self.run_epoch(self.train_data, merged_sum, writer)
+      train_perplexity = self.run_epoch(self.train_data, merged_sum, writer)
+
+      print(" [*] Epoch: %d Train Perplexity: %.3f" % (i + 1, train_perplexity))
 
   def run_epoch(self, data, summary, writer):
     epoch_size = ((len(data) // self.batch_size) - 1) // self.max_seq_l
@@ -216,7 +225,7 @@ class RCMN(BaseModel):
 
       idx = step % (epoch_size // 10)
       if idx == 10:
-        print("%.3f perplexity: %.3f speed: %.0f wps" %
+        print(" [*] %.3f perplexity: %.3f speed: %.0f wps" %
               (step * 1.0 / epoch_size, np.exp(costs / iters),
               iters * self.batch_size / (time.time() - start_time)))
 
@@ -225,7 +234,7 @@ class RCMN(BaseModel):
 
         writer.add_summary(summary_str, self.g_step.eval())
       elif idx == 20:
-        self.save(self.g_step.eval())
+        self.save_model(step=self.g_step.eval())
       else:
         cost, state, _ = self.sess.run([self.cost, self.final_state, self.optim], data)
 

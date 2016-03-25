@@ -66,6 +66,7 @@ class RcmnTraining1(object):
   decay_step    = 10000
   learning_rate = 0.001
   l2            = 0.0004
+  epsilon       = 0.1
   optim_type    = "adam"
 
 class RcmnSmallConfig(RcmnSmall, Default, Word, GRU, RcmnTraining1):
