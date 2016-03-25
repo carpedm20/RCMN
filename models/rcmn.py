@@ -158,7 +158,7 @@ class RCMN(BaseModel):
       if self.is_single_output:
         if self.max_pool_in_output:
           self.y_ = tf.squeeze(tf.nn.max_pool(
-            tf.expand_dims(tf.pack(self.Y_), [0, 1]), [1, 1, 3, 1], [1, 1, 1, 1], 'VALID'))
+            tf.expand_dims(tf.pack(self.Y_), [0]), [1, self.num_steps, 1, 1], [1, 1, 1, 1], 'VALID'))
         else:
           self.y_ = self.Y_[-1]
 
@@ -178,11 +178,11 @@ class RCMN(BaseModel):
 
       tvars = tf.trainable_variables()
       if self.l2 > 0:
-        self.l2_loss = self.l2 * sum([tf.nn.l2_loss(tvar) for tvar in tvars])
+        self.l2_loss = sum([tf.contrib.layers.l2_regularizer(self.l2)(tvar) for tvar in tvars])
       else:
         self.l2_loss = 0
 
-      loss = (tf.reduce_sum(seq_loss) / self.batch_size)
+      loss = tf.reduce_mean(seq_loss)
       self.cost = loss + self.l2_loss
       self.final_state = state
 
@@ -202,6 +202,7 @@ class RCMN(BaseModel):
       _ = tf.scalar_summary("loss + l2", self.cost)
       _ = tf.scalar_summary("l2", self.l2_loss)
       _ = tf.scalar_summary("loss", loss)
+      _ = tf.histogram_summary("loss hist", seq_loss)
 
   def build_reader(self):
     data_path = "./data/%s" % self.dataset
@@ -247,7 +248,7 @@ class RCMN(BaseModel):
       else:
         data = {self.x: x, self.y: y, self.initial_state: state}
 
-      if step % 100 == 99:
+      if step % 50 == 49:
         cost, state = self.sess.run([self.cost, self.final_state], data)
         print(" [*] %.3f perplexity: %.3f speed: %.0f wps" %
               (step * 1.0 / epoch_size, np.exp(costs / iters),
