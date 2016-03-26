@@ -19,6 +19,20 @@ class Default(object):
 
 class RcmnSmall(object):
   keep_prob     = 1.0
+  embed_dim     = 200
+  hidden_dim    = 200
+  vocab_size    = 10000
+  word          = 1
+  num_steps     = 3
+  max_seq_l     = 10
+  num_layers    = 2
+  k_widths      = [2]
+  num_ks        = [4]
+
+  batch_size    = 20
+
+class RcmnSmall2(object):
+  keep_prob     = 1.0
   embed_dim     = 300
   hidden_dim    = 300
   vocab_size    = 10000
@@ -27,7 +41,7 @@ class RcmnSmall(object):
   max_seq_l     = 20
   num_layers    = 2
   k_widths      = [2]
-  num_ks        = [5]
+  num_ks        = [4]
 
   batch_size    = 20
 
@@ -60,7 +74,7 @@ class RcmnLarge(object):
   batch_size    = 30
 
 class RcmnTraining1(object):
-  max_epoch     = 14
+  max_epoch     = 100
   max_grad_norm = 10
   decay_rate    = 0.96
   decay_step    = 10000
@@ -69,7 +83,7 @@ class RcmnTraining1(object):
   epsilon       = 0.1
   optim_type    = "adam"
 
-class RcmnSmallConfig(RcmnSmall, Default, Word, GRU, RcmnTraining1):
+class RcmnSmallConfig(RcmnSmall, Default, Word, LSTM, RcmnTraining1):
   pass
 
 class RcmnLargeConfig(RcmnLarge, Default, Char, GRU, RcmnTraining1):
