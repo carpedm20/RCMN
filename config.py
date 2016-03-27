@@ -91,16 +91,18 @@ class RcmnLargeConfig(RcmnLarge, Default, Char, GRU, RcmnTraining1):
 
 class CustomConfig():
   keep_prob=1.0
-  hidden_dim=200
+  hidden_dim=500
   embed_dim=200
   vocab_size=10000
-  num_layers=2
-  num_ks=[4]
+  num_layers=1
+  num_ks=[5]
   k_widths=[2]
   num_steps=3
+  max_seq_l=10
   is_single_output=True
-  max_pool_in_output=True
+  max_pool_in_output=False
   l2=0.0004
+  word=1
   optim_type="adam"
   batch_size=20
   max_epoch=1400

@@ -42,7 +42,7 @@ def main(_):
                  num_layers=config.num_layers, embed_dim=config.embed_dim,
                  vocab_size=config.vocab_size, batch_size=config.batch_size,
                  num_steps=config.num_steps, max_epoch=config.max_epoch,
-                 learning_rate=config.learning_rate,
+                 learning_rate=config.learning_rate, max_seq_l=config.max_seq_l,
                  k_widths=config.k_widths, num_ks=config.num_ks,
                  max_grad_norm=config.max_grad_norm, decay_rate=config.decay_rate,
                  decay_step=config.decay_step, is_single_output=config.is_single_output,
