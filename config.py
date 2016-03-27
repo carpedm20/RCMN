@@ -20,8 +20,8 @@ class Default(object):
 
 class RcmnSmall(object):
   keep_prob     = 1.0
-  embed_dim     = 300
-  hidden_dim    = 300
+  embed_dim     = 200
+  hidden_dim    = 200
   vocab_size    = 10000
   word          = 1
   num_steps     = 5
@@ -70,7 +70,7 @@ class RcmnTraining1(object):
   epsilon       = 0.1
   optim_type    = "adam"
 
-class RcmnSmallConfig(RcmnSmall, Default, Word, GRU, RcmnTraining1):
+class RcmnSmallConfig(RcmnSmall, Default, Word, LSTM, RcmnTraining1):
   pass
 
 class RcmnLargeConfig(RcmnLarge, Default, Char, GRU, RcmnTraining1):
