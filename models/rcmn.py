@@ -50,10 +50,12 @@ class RCMN(BaseModel):
     self.g_epoch = tf.Variable(0, name='epoch', trainable=False)
 
     self._attrs = ["keep_prob", "hidden_dim", "embed_dim", "vocab_size",
-                   "num_layers", "num_ks", "k_widths", "num_steps", "max_seq_l"
-                   "rnn_type", "is_single_output", "max_pool_in_output",
+                   "num_layers", "num_ks", "k_widths", "num_steps",
+                   "max_seq_l", "rnn_type", "is_single_output",
+                   "max_pool_in_output",
                    "l2", "optim_type", "batch_size", "max_epoch", "epsilon",
-                   "learning_rate", "max_grad_norm", "decay_rate", "decay_step", "dataset"]
+                   "learning_rate", "max_grad_norm",
+                   "decay_rate", "decay_step", "dataset"]
 
     self.build_model()
     self.build_reader()

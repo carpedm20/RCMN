@@ -15,7 +15,7 @@ class GRU(object):
 class Default(object):
   dataset = "ptb"
   is_single_output = True
-  max_pool_in_output = True
+  max_pool_in_output = False
 
 class RcmnSmall(object):
   keep_prob     = 1.0
@@ -74,7 +74,7 @@ class RcmnLarge(object):
   batch_size    = 30
 
 class RcmnTraining1(object):
-  max_epoch     = 100
+  max_epoch     = 1000
   max_grad_norm = 10
   decay_rate    = 0.96
   decay_step    = 10000
@@ -89,6 +89,29 @@ class RcmnSmallConfig(RcmnSmall, Default, Word, LSTM, RcmnTraining1):
 class RcmnLargeConfig(RcmnLarge, Default, Char, GRU, RcmnTraining1):
   pass
 
+class CustomConfig():
+  keep_prob=1.0
+  hidden_dim=200
+  embed_dim=200
+  vocab_size=10000
+  num_layers=2
+  num_ks=[4]
+  k_widths=[2]
+  num_steps=3
+  is_single_output=True
+  max_pool_in_output=True
+  l2=0.0004
+  optim_type="adam"
+  batch_size=20
+  max_epoch=1400
+  epsilon=0.1
+  learning_rate=0.001
+  max_grad_norm=10
+  decay_rate=0.96
+  decay_step=10000
+  dataset="ptb"
+  rnn_type = "GRU"
+
 def get_config(FLAGS):
   if FLAGS.model == "rcmn":
     config = FLAGS
@@ -96,6 +119,8 @@ def get_config(FLAGS):
     config = RcmnSmallConfig
   elif FLAGS.model == "large":
     config = RcmnLargeConfig
+  elif FLAGS.model == "custom":
+    config = CustomConfig
   else:
     raise ValueError(" [!] Invalid model: %s", FLAGS.model)
 
