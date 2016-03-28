@@ -24,9 +24,9 @@ class RcmnSmall(object):
   hidden_dim    = 200
   vocab_size    = 10000
   word          = 1
-  num_steps     = 5
-  max_seq_l     = 10
-  num_layers    = 1
+  num_steps     = 3
+  max_seq_l     = 30
+  num_layers    = 2
   k_widths      = [2]
   num_ks        = [4]
 
@@ -70,7 +70,7 @@ class RcmnTraining1(object):
   epsilon       = 0.1
   optim_type    = "adam"
 
-class RcmnSmallConfig(RcmnSmall, Default, Word, GRU, RcmnTraining1):
+class RcmnSmallConfig(RcmnSmall, Default, Word, LSTM, RcmnTraining1):
   pass
 
 class RcmnLargeConfig(RcmnLarge, Default, Char, GRU, RcmnTraining1):
