@@ -10,19 +10,39 @@ from .base import BaseModel
 
 class RCMN(BaseModel):
   """Recurrent Convolutional Memory Network."""
-  def __init__(self, sess, keep_prob=0.35, hidden_dim=650, num_layers=2,
-               embed_dim=500, k_widths=[2], num_ks=[5], num_steps=5,
-               vocab_size=10000, batch_size=20, max_seq_l=30, max_epoch=100,
-               learning_rate=0.001, max_grad_norm=10, decay_rate=0.96,
-               decay_step=10000, dataset="ptb", rnn_type="GRU", mode=0,
-               l2=0.0004, epsilon=1.0, optim_type="adam", is_single_output=False,
-               max_pool_in_output=False):
+  def __init__(self, sess,
+               keep_prob,#=0.35,
+               hidden_dim,#=650,
+               embed_dim,#=500,
+               num_layers,#=2,
+               vocab_size,#=10000,
+               num_ks,#=[5],
+               k_widths,#=[2],
+               num_steps,#=5,
+               max_seq_l,#=30,
+               rnn_type,#="GRU", 
+               is_single_output,#=False,
+               max_pool_in_output,#=False,
+
+               l2,#=0.0004,
+               optim_type,#="adam",
+               batch_size,#=20,
+               max_epoch,#=100,
+               learning_rate,#=0.001,
+               max_grad_norm,#=10,
+               epsilon,#=1.0
+               decay_rate,#=0.96,
+               decay_step,#=10000,
+               dataset,#="ptb",
+               mode,#=0,
+               ):
+               
     """Initialize Recurrent Convolutional Memory Network."""
     self.keep_prob = keep_prob
     self.hidden_dim = hidden_dim
     self.embed_dim = embed_dim
-    self.vocab_size = vocab_size
     self.num_layers = num_layers
+    self.vocab_size = vocab_size
     self.num_ks = num_ks
     self.k_widths = k_widths
     self.num_steps = num_steps
@@ -49,13 +69,13 @@ class RCMN(BaseModel):
     self.g_step = tf.Variable(0, name='step', trainable=False)
     self.g_epoch = tf.Variable(0, name='epoch', trainable=False)
 
-    self._attrs = ["keep_prob", "hidden_dim", "embed_dim", "vocab_size",
-                   "num_layers", "num_ks", "k_widths", "num_steps",
-                   "max_seq_l", "rnn_type", "is_single_output",
-                   "max_pool_in_output",
-                   "l2", "optim_type", "batch_size", "max_epoch", "epsilon",
-                   "learning_rate", "max_grad_norm",
-                   "decay_rate", "decay_step", "dataset"]
+    self._attrs = ["keep_prob", "hidden_dim", "num_layers",
+                   "embed_dim", "k_widths", "num_ks", "num_steps",
+                   "vocab_size", "batch_size", "max_seq_l", "max_epoch",
+                   "learning_rate", "max_grad_norm", "decay_rate",
+                   "decay_step", "dataset", "rnn_type", "mode",
+                   "l2", "epsilon", "optim_type", "is_single_output",
+                   "max_pool_in_output"]
 
     self.build_model()
     self.build_reader()

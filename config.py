@@ -8,7 +8,7 @@ class Word(object):
   word = 1
 
 class LSTM(object):
-  rnn_type = "LSTM"
+  rnn_type = "LSTM" # Much better than GRU
 
 class GRU(object):
   rnn_type = "GRU"
@@ -16,7 +16,7 @@ class GRU(object):
 class Default(object):
   dataset = "ptb"
   is_single_output = True
-  max_pool_in_output = True
+  max_pool_in_output = False
 
 class RcmnSmall(object):
   keep_prob     = 1.0
