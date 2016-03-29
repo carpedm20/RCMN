@@ -73,7 +73,7 @@ class RCMN(BaseModel):
                    "embed_dim", "k_widths", "num_ks", "num_steps",
                    "vocab_size", "batch_size", "max_seq_l", "max_epoch",
                    "learning_rate", "max_grad_norm", "decay_rate",
-                   "decay_step", "dataset", "rnn_type", "mode",
+                   "decay_step", "dataset", "rnn_type",
                    "l2", "epsilon", "optim_type", "is_single_output",
                    "max_pool_in_output"]
 
@@ -208,9 +208,6 @@ class RCMN(BaseModel):
       self.cost = loss + self.l2_loss
       self.final_state = state
 
-      if not self.is_training:
-        return
-
       grads, _ = tf.clip_by_global_norm(tf.gradients(self.cost, tvars), self.max_grad_norm)
 
       if self.optim_type == "adam":
@@ -250,14 +247,35 @@ class RCMN(BaseModel):
     start_epoch = self.g_epoch.eval()
     for epoch in xrange(start_epoch, self.max_epoch-start_epoch):
       train_perplexity = self.run_epoch(self.train_data, merged_sum, writer)
-
       print(" [*] Epoch: %d Train Perplexity: %.3f" % (epoch + 1, train_perplexity))
 
-      self.g_epoch.assign(epoch + 1)
-      self.save_model(step=self.g_step.eval())
+      test_perplexity = self.run_epoch(self.test_data)
+      print(" [*] Epoch: %d Test Perplexity: %.3f" % (epoch + 1, test_perplexity))
 
-  def run_epoch(self, data, summary, writer):
-    epoch_size = ((len(data) // self.batch_size) - 1) // self.max_seq_l
+      summary = tf.Summary(value=[tf.Summary.Value(tag="test_perplexity", simple_value=test_perplexity)])
+      writer.add_summary(summary, global_step=epoch)
+
+      self.g_epoch.assign(epoch + 1).eval()
+      if epoch % 10:
+        self.save_model(step=self.g_step.eval())
+
+  def test(self):
+    print("[*] Start testing...")
+
+    merged_sum = tf.merge_all_summaries()
+    writer = tf.train.SummaryWriter("./logs/%s" % self.get_model_dir(), self.sess.graph)
+
+    tf.initialize_all_variables().run()
+    self.load_model()
+
+    #train_perplexity = self.run_epoch(self.train_data, merged_sum, writer)
+    #print(" [*] Train Perplexity: %.3f" % (train_perplexity))
+
+    test_perplexity = self.run_epoch(self.test_data)
+    print(" [*] Test Perplexity: %.3f" % (test_perplexity))
+
+  def run_epoch(self, data, summary=None, writer=None):
+    epoch_size = (len(data) // self.batch_size) - self.num_steps
     start_time = time.time()
     costs = 0.0
     iters = 0
@@ -270,18 +288,21 @@ class RCMN(BaseModel):
       else:
         data = {self.x: x, self.y: y, self.initial_state: state}
 
-      if step % 50 == 49:
+      if step % 100 == 99:
         cost, state = self.sess.run([self.cost, self.final_state], data)
         print(" [*] %.3f perplexity: %.3f speed: %.0f wps" %
               (step * 1.0 / epoch_size, np.exp(costs / iters),
               iters * self.batch_size / (time.time() - start_time)))
 
-      if step % 5 == 4:
-        cost, state, summary_str, _ = self.sess.run(
-            [self.cost, self.final_state, summary, self.optim], data)
-        writer.add_summary(summary_str, self.g_step.eval())
+      if summary != None:
+        if step % 500 == 499:
+          cost, state, summary_str, _ = self.sess.run(
+              [self.cost, self.final_state, summary, self.optim], data)
+          writer.add_summary(summary_str, self.g_step.eval())
+        else:
+          cost, state, _ = self.sess.run([self.cost, self.final_state, self.optim], data)
       else:
-        cost, state, _ = self.sess.run([self.cost, self.final_state, self.optim], data)
+        cost, state = self.sess.run([self.cost, self.final_state], data)
 
       costs += cost
       if self.is_single_output:
@@ -291,7 +312,7 @@ class RCMN(BaseModel):
 
     pred_words = [self.idx2word[i] for i in self.sess.run(self.pred, data)]
     print("\n\n".join([" ".join([self.idx2word[i] for i in l]) \
-                        + ' "%s"' % w for l, w in zip(x, pred_words)]))
+                      + ' "%s:%s"' % (w, self.idx2word[y_]) for l, w, y_ in zip(x, pred_words, y[:,-1])]))
 
     return np.exp(costs / iters)
 

@@ -17,8 +17,8 @@ flags.DEFINE_float("num_layers", 2, "The number of layers in RCMN [2]")
 flags.DEFINE_integer("hidden_dim", 650, "The dimension of hidden memory [650]")
 flags.DEFINE_integer("embed_dim", 500, "The dimension of input embeddings [500]")
 flags.DEFINE_integer("vocab_size", 10000, "The size of vocabulary [10000]")
-flags.DEFINE_boolean("word", 1, "0 for using character, 1 for using word [1]")
-flags.DEFINE_boolean("mode", 0, "0 for training, 1 for testing [0]")
+flags.DEFINE_integer("mode", 0, "0 for training, 1 for testing [0]")
+flags.DEFINE_integer("word", 1, "0 for using character, 1 for using word [1]")
 
 # Training configs
 flags.DEFINE_integer("max_epoch", 14, "Maximum number of epoch [14]")
@@ -52,7 +52,7 @@ def main(_):
     if FLAGS.mode == 0:
       model.train()
     else:
-      model.load()
+      model.test()
 
 if __name__ == '__main__':
   tf.app.run()
