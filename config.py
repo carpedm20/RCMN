@@ -16,18 +16,18 @@ class GRU(object):
 class Default(object):
   dataset = "ptb"
   is_single_output = True
-  max_pool_in_output = False
+  max_pool_in_output = True
 
 class RcmnSmall(object):
   keep_prob     = 1.0
-  embed_dim     = 200
-  hidden_dim    = 200
+  embed_dim     = 150
+  hidden_dim    = 150
   vocab_size    = 10000
   word          = 1
-  num_steps     = 3
+  num_steps     = 2
   max_seq_l     = 30
   num_layers    = 2
-  k_widths      = [2]
+  k_widths      = [3]
   num_ks        = [4]
 
   batch_size    = 20

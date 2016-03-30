@@ -113,10 +113,14 @@ class RCMN(BaseModel):
 
       if self.rnn_type == "GRU":
         cell1 = rnn_cell.GRUCell(self.hidden_dim, input_size)
-        cell2 = rnn_cell.GRUCell(self.hidden_dim, self.hidden_dim)
+        cell2s = []
+        for _ in xrange(self.num_layers-1):
+          cell2s.append(rnn_cell.GRUCell(self.hidden_dim, self.hidden_dim))
       elif self.rnn_type == "LSTM":
         cell1 = rnn_cell.LSTMCell(self.hidden_dim, input_size)
-        cell2 = rnn_cell.LSTMCell(self.hidden_dim, self.hidden_dim)
+        cell2s = []
+        for _ in xrange(self.num_layers-1):
+          cell2s.append(rnn_cell.LSTMCell(self.hidden_dim, self.hidden_dim))
       else:
         raise Exception(" [!] Unkown rnn cell type: %s" % self.rnn_type)
 
@@ -127,7 +131,7 @@ class RCMN(BaseModel):
       #      cell2, output_keep_prob=self.keep_prob)
 
       cell = rnn_cell.MultiRNNCell(
-          [cell1] + [cell2] * (self.num_layers-1))
+          [cell1] + cell2s)
 
       self.initial_state = cell.zero_state(self.batch_size, tf.float32)
 
@@ -256,8 +260,7 @@ class RCMN(BaseModel):
       writer.add_summary(summary, global_step=epoch)
 
       self.g_epoch.assign(epoch + 1).eval()
-      if epoch % 10:
-        self.save_model(step=self.g_step.eval())
+      self.save_model(step=self.g_step.eval())
 
   def test(self):
     print("[*] Start testing...")
@@ -295,7 +298,7 @@ class RCMN(BaseModel):
               iters * self.batch_size / (time.time() - start_time)))
 
       if summary != None:
-        if step % 500 == 499:
+        if step % 100 == 99:
           cost, state, summary_str, _ = self.sess.run(
               [self.cost, self.final_state, summary, self.optim], data)
           writer.add_summary(summary_str, self.g_step.eval())

@@ -105,7 +105,7 @@ def ptb_iterator(raw_data, batch_size, num_steps):
   for i in range(batch_size):
     data[i] = raw_data[batch_len * i:batch_len * (i + 1)]
 
-  epoch_size = data.shape[1]
+  epoch_size = data.shape[1] - num_steps + 1
   #epoch_size = (batch_len - 1) // num_steps
 
   if epoch_size == 0:
