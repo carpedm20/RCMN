@@ -1,7 +1,9 @@
 Recurrent Convolutional Memory Network
 ======================================
 
-An implementation of the Recurrent Convolutional Memory Network described in the paper [???]() by Taehoon Kim, and Sung Ju Hwang.
+An implementation of the experimental Recurrent Convolutional Memory Network.
+
+![model](./assets/RCMN.png)
 
 
 Prerequisites
