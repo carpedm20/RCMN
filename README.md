@@ -1,7 +1,7 @@
 Recurrent Convolutional Memory Network
 ======================================
 
-An implementation of the experimental Recurrent Convolutional Memory Network.
+An implementation of Recurrent Convolutional Memory Network (still in progress).
 
 ![model](./assets/RCMN.png)
 

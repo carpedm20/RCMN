@@ -11,7 +11,9 @@ class BaseModel(object):
     model_dir = self.dataset
     for attr in self._attrs:
       if hasattr(self, attr):
-        model_dir += "/%s:%s" % (attr, str(getattr(self, attr)))
+        v = getattr(self, attr)
+        model_dir += "/%s:%s" % (attr, ",".join([str(i) for i in v]) if type(v) == list else v)
+
     return model_dir
 
   def save_model(self, step=None):
@@ -37,8 +39,9 @@ class BaseModel(object):
     ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
     if ckpt and ckpt.model_checkpoint_path:
       ckpt_name = os.path.basename(ckpt.model_checkpoint_path)
-      self.saver.restore(self.sess, os.path.join(checkpoint_dir, ckpt_name))
-      print(" [*] Load SUCCESS")
+      fname = os.path.join(checkpoint_dir, ckpt_name)
+      self.saver.restore(self.sess, fname)
+      print(" [*] Load SUCCESS: %s" % fname)
       return True
     else:
       print(" [!] Load failed...")
